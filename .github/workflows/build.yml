@@ -1,0 +1,46 @@
+name: Build Flet Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Permite disparar manualmente na aba Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+
+      - name: Instalar Flet e Dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install "flet[all]" reportlab
+
+      - name: Compilar APK Android
+        run: |
+          flet build apk
+
+      - name: Disponibilizar APK para Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppRevisional-Android-APK
+          path: build/apk/*.apk

@@ -1,0 +1,2 @@
+[tool.flet]
+main_module = "ui_flet"
