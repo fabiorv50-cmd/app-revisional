@@ -3,7 +3,7 @@ name: Build Flet Android APK
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # Permite disparar manualmente na aba Actions
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,21 +24,25 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Configurar Flutter
+      - name: Configurar Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.x'
           channel: 'stable'
+
       - name: Instalar Flet e Dependências
         run: |
           python -m pip install --upgrade pip
-          pip install flet reportlab customtkinter
+          pip install flet reportlab core
 
       - name: Compilar APK Android
         run: |
-          flet build apk
+          # O parâmetro -y ou criação de entrada simulada evita a interrupção interativa
+          printf 'y\n' | flet build apk
+        env:
+          CI: true
 
       - name: Disponibilizar APK para Download
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: AppRevisional-Android-APK
