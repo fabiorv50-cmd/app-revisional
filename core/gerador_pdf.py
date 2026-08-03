@@ -158,3 +158,5 @@ def exportar_pdf(filepath, params, resumo, memoria, logo_path="", rodape_texto="
         return NumberedCanvas(*args, logo_path=logo_path, rodape_texto=rodape_texto, **kwargs)
 
     doc.build(elements, canvasmaker=make_canvas)
+
+gerar_pdf_revisional = exportar_pdf

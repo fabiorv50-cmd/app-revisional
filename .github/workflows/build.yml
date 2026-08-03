@@ -32,7 +32,7 @@ jobs:
       - name: Instalar Flet e Dependências
         run: |
           python -m pip install --upgrade pip
-          pip install flet reportlab core
+          pip install flet reportlab
 
       - name: Compilar APK Android
         run: |
