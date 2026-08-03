@@ -78,10 +78,10 @@ def main_flet(page: ft.Page):
             page.update()
 
     grid_cards = ft.ResponsiveRow([
-        ft.Container(ft.Column([ft.Text("TOTAL PAGO", size=9), lbl_pago]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.Colors.RED_400), padding=8, border_radius=8),
-        ft.Container(ft.Column([ft.Text("TOTAL DEVIDO", size=9), lbl_devido]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.Colors.GREEN_400), padding=8, border_radius=8),
-        ft.Container(ft.Column([ft.Text("REST. SIMPLES", size=9), lbl_simples]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.Colors.BLUE_400), padding=8, border_radius=8),
-        ft.Container(ft.Column([ft.Text("REST. DOBRO", size=9), lbl_dobro]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.Colors.PURPLE_400), padding=8, border_radius=8),
+        ft.Container(ft.Column([ft.Text("TOTAL PAGO", size=9), lbl_pago]), col={"sm": 6, "md": 3}, border=ft.Border.all(1, ft.Colors.RED_400), padding=8, border_radius=8),
+        ft.Container(ft.Column([ft.Text("TOTAL DEVIDO", size=9), lbl_devido]), col={"sm": 6, "md": 3}, border=ft.Border.all(1, ft.Colors.GREEN_400), padding=8, border_radius=8),
+        ft.Container(ft.Column([ft.Text("REST. SIMPLES", size=9), lbl_simples]), col={"sm": 6, "md": 3}, border=ft.Border.all(1, ft.Colors.BLUE_400), padding=8, border_radius=8),
+        ft.Container(ft.Column([ft.Text("REST. DOBRO", size=9), lbl_dobro]), col={"sm": 6, "md": 3}, border=ft.Border.all(1, ft.Colors.PURPLE_400), padding=8, border_radius=8),
     ])
 
     page.add(
