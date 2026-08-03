@@ -1,7 +1,8 @@
 # ui_flet.py
 import flet as ft
+from flet import colors
 from core.calculos import calcular_revisao_contrato
-from core.gerador_pdf import exportar_pdf
+
 
 def main_flet(page: ft.Page):
     page.title = "Sistema Revisional (Flet/Mobile)"
@@ -20,10 +21,10 @@ def main_flet(page: ft.Page):
     dd_sistema = ft.Dropdown(label="Sistema", value="PRICE", options=[ft.dropdown.Option("PRICE"), ft.dropdown.Option("SAC")])
     txt_rodape = ft.TextField(label="Rodapé PDF", value="Advocacia Rocha | OAB 12.345")
 
-    lbl_pago = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.colors.RED_400)
-    lbl_devido = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400)
-    lbl_simples = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_400)
-    lbl_dobro = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.colors.PURPLE_400)
+    lbl_pago = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
+    lbl_devido = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
+    lbl_simples = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
+    lbl_dobro = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
 
     dt_memoria = ft.DataTable(
         columns=[
@@ -88,7 +89,7 @@ def main_flet(page: ft.Page):
         ft.Text("SISTEMA REVISIONAL PERICIAL", size=18, weight=ft.FontWeight.BOLD),
         ft.Divider(),
         txt_valor, txt_tarifas, txt_prazo, txt_taxa_banco, txt_taxa_bacen, dd_sistema, txt_rodape,
-        ft.ElevatedButton("CALCULAR REVISÃO", on_click=calcular, bgcolor=ft.colors.GREEN_700, color=ft.colors.WHITE, height=42),
+        ft.ElevatedButton("CALCULAR REVISÃO", on_click=calcular, bgcolor=ft.Colors.GREEN_700, color=ft.colors.WHITE, height=42),
         ft.Divider(),
         grid_cards,
         ft.Divider(),
