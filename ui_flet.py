@@ -1,6 +1,5 @@
 # ui_flet.py
 import flet as ft
-from flet import colors
 from core.calculos import calcular_revisao_contrato
 
 
@@ -79,17 +78,17 @@ def main_flet(page: ft.Page):
             page.update()
 
     grid_cards = ft.ResponsiveRow([
-        ft.Container(ft.Column([ft.Text("TOTAL PAGO", size=9), lbl_pago]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.colors.RED_400), padding=8, border_radius=8),
-        ft.Container(ft.Column([ft.Text("TOTAL DEVIDO", size=9), lbl_devido]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.colors.GREEN_400), padding=8, border_radius=8),
-        ft.Container(ft.Column([ft.Text("REST. SIMPLES", size=9), lbl_simples]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.colors.BLUE_400), padding=8, border_radius=8),
-        ft.Container(ft.Column([ft.Text("REST. DOBRO", size=9), lbl_dobro]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.colors.PURPLE_400), padding=8, border_radius=8),
+        ft.Container(ft.Column([ft.Text("TOTAL PAGO", size=9), lbl_pago]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.Colors.RED_400), padding=8, border_radius=8),
+        ft.Container(ft.Column([ft.Text("TOTAL DEVIDO", size=9), lbl_devido]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.Colors.GREEN_400), padding=8, border_radius=8),
+        ft.Container(ft.Column([ft.Text("REST. SIMPLES", size=9), lbl_simples]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.Colors.BLUE_400), padding=8, border_radius=8),
+        ft.Container(ft.Column([ft.Text("REST. DOBRO", size=9), lbl_dobro]), col={"sm": 6, "md": 3}, border=ft.border.all(1, ft.Colors.PURPLE_400), padding=8, border_radius=8),
     ])
 
     page.add(
         ft.Text("SISTEMA REVISIONAL PERICIAL", size=18, weight=ft.FontWeight.BOLD),
         ft.Divider(),
         txt_valor, txt_tarifas, txt_prazo, txt_taxa_banco, txt_taxa_bacen, dd_sistema, txt_rodape,
-        ft.ElevatedButton("CALCULAR REVISÃO", on_click=calcular, bgcolor=ft.Colors.GREEN_700, color=ft.colors.WHITE, height=42),
+        ft.ElevatedButton("CALCULAR REVISÃO", on_click=calcular, bgcolor=ft.Colors.GREEN_700, color=ft.Colors.WHITE, height=42),
         ft.Divider(),
         grid_cards,
         ft.Divider(),
