@@ -6,9 +6,7 @@ from core.gerador_pdf import exportar_pdf
 def main_flet(page: ft.Page):
     page.title = "Sistema Pericial Revisional"
     page.theme_mode = ft.ThemeMode.DARK
-    page.scroll = ft.ScrollMode.AUTO
-    page.padding = 10
-    page.horizontal_alignment = ft.CrossAxisAlignment.START
+    page.padding = 15
 
     # Estado da aplicação
     valores_pagos_custom = {}
@@ -16,7 +14,7 @@ def main_flet(page: ft.Page):
     resumo_atual = {"dados": None}
     memoria_atual = {"dados": None}
 
-    # --- 1. FILEPICKER ---
+    # --- 1. FILEPICKER (Sem adicionar no page.overlay para evitar 'Unknown control') ---
     def on_logo_selecionada(e: ft.FilePickerResultEvent):
         if e.files and len(e.files) > 0:
             logo_path["caminho"] = e.files[0].path
@@ -24,17 +22,22 @@ def main_flet(page: ft.Page):
             lbl_logo_status.color = ft.Colors.GREEN_400
             page.update()
 
-    file_picker_logo = ft.FilePicker()
-    file_picker_logo.on_result = on_logo_selecionada
-    page.overlay.append(file_picker_logo)
+    file_picker_logo = ft.FilePicker(on_result=on_logo_selecionada)
+
+    # NÃO adicione o file_picker_logo no page.overlay ou page.add!
 
     def selecionar_logo(e):
-        file_picker_logo.pick_files(
-            allow_multiple=False,
-            file_type=ft.FilePickerFileType.IMAGE
-        )
+        try:
+            file_picker_logo.pick_files(
+                allow_multiple=False,
+                file_type=ft.FilePickerFileType.IMAGE
+            )
+        except Exception as err:
+            page.snack_bar = ft.SnackBar(ft.Text(f"Seleção indisponível no mobile: {err}"))
+            page.snack_bar.open = True
+            page.update()
 
-    # --- 2. CAMPOS DE ENTRADA (LARGURA FIXADA PARA NÃO VAZAR A TELA) ---
+    # --- 2. CAMPOS DE ENTRADA ---
     ent_valor = ft.TextField(label="Valor Financiado Bruto (R$)", value="50000", keyboard_type=ft.KeyboardType.NUMBER)
     ent_tarifas = ft.TextField(label="Tarifas/Seguros Indevidos (R$)", value="2000",
                                keyboard_type=ft.KeyboardType.NUMBER)
@@ -148,7 +151,7 @@ def main_flet(page: ft.Page):
             page.snack_bar.open = True
             page.update()
 
-    # --- 6. PAINEL DE CARDS COM ROLAGEM HORIZONTAL ---
+    # --- 6. PAINEL DE CARDS ---
     painel_cards = ft.Row(
         controls=[
             ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=9), card_pago]), padding=6)),
@@ -160,7 +163,7 @@ def main_flet(page: ft.Page):
         scroll=ft.ScrollMode.AUTO
     )
 
-    # --- 7. ESTRUTURA DO LAYOUT COM ROLAGEM ISOLADA ---
+    # --- 7. MONTAGEM EM LISTVIEW COMPACTO ---
     layout_conteudo = ft.ListView(
         controls=[
             ft.Text("PARÂMETROS DO CONTRATO", size=16, weight=ft.FontWeight.BOLD),
@@ -183,7 +186,7 @@ def main_flet(page: ft.Page):
             ft.Text("MEMÓRIA DE CÁLCULO", size=15, weight=ft.FontWeight.BOLD),
             ft.Row([tabela], scroll=ft.ScrollMode.AUTO)
         ],
-        spacing=12,
+        spacing=10,
         expand=True
     )
 
