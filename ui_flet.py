@@ -159,13 +159,13 @@ def main_flet(page: ft.Page):
         scroll=ft.ScrollMode.AUTO
     )
 
-    # --- 7. MONTAGEM ISOLADA DA TABELA COM ROLAGEM HORIZONTAL ---
+    # --- 7. TABELA COM ROLAGEM HORIZONTAL ---
     tabela_container = ft.Row(
         controls=[tabela],
         scroll=ft.ScrollMode.AUTO,
     )
 
-    # --- 8. CORPO DA INTERFACE ENCAPSULADO ---
+    # --- 8. ESTRUTURA DO FORMULÁRIO ---
     conteudo_formulario = ft.Column(
         controls=[
             ft.Text("PARÂMETROS DO CONTRATO", size=16, weight=ft.FontWeight.BOLD),
@@ -191,11 +191,10 @@ def main_flet(page: ft.Page):
         spacing=12,
     )
 
-    # Envolve em um Container centralizado na largura da janela
     page.add(
         ft.Container(
             content=conteudo_formulario,
-            alignment=ft.alignment(-1,-1)
+            padding=5
         )
     )
 
