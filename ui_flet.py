@@ -41,7 +41,7 @@ def main_flet(page: ft.Page):
             lbl_logo_status.color = ft.Colors.GREEN_400
             page.update()
 
-    picker_logo = ft.FilePicker(on_result=resultado_picker_logo)
+    picker_logo = ft.FilePicker(on_select=resultado_picker_logo)
     page.overlay.append(picker_logo)
 
     # Tabela de Memória de Cálculo
