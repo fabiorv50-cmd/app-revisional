@@ -37,7 +37,7 @@ jobs:
       - name: Compilar APK Android
         run: |
           # O parâmetro -y ou criação de entrada simulada evita a interrupção interativa
-          printf 'y\n' | flet build apk
+          printf 'y\n' | flet build apk --include-py-package reportlab
         env:
           CI: true
 
