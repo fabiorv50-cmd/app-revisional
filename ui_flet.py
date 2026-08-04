@@ -7,7 +7,7 @@ def main_flet(page: ft.Page):
     page.title = "Sistema Pericial Revisional"
     page.theme_mode = ft.ThemeMode.DARK
     page.scroll = ft.ScrollMode.AUTO
-    page.padding = 10
+    page.padding = 12
 
     # Estado da aplicação
     valores_pagos_custom = {}
@@ -33,7 +33,7 @@ def main_flet(page: ft.Page):
             file_type=ft.FilePickerFileType.IMAGE
         )
 
-    # --- 2. CAMPOS DE ENTRADA (Sem expand=True para evitar corte) ---
+    # --- 2. CAMPOS DE ENTRADA ---
     ent_valor = ft.TextField(label="Valor Financiado Bruto (R$)", value="50000", keyboard_type=ft.KeyboardType.NUMBER)
     ent_tarifas = ft.TextField(label="Tarifas/Seguros Indevidos (R$)", value="2000",
                                keyboard_type=ft.KeyboardType.NUMBER)
@@ -51,12 +51,12 @@ def main_flet(page: ft.Page):
     ent_rodape = ft.TextField(label="Rodapé do PDF", value="Advocacia Rocha | OAB 12.345")
 
     # --- 3. CARDS DE RESULTADOS ---
-    card_pago = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
-    card_devido = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
-    card_simples = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
-    card_dobro = ft.Text("R$ 0,00", size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
+    card_pago = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
+    card_devido = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
+    card_simples = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
+    card_dobro = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
 
-    # --- 4. TABELA ---
+    # --- 4. TABELA DE MEMÓRIA DE CÁLCULO ---
     tabela = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("Nº")),
@@ -71,7 +71,7 @@ def main_flet(page: ft.Page):
         rows=[]
     )
 
-    # --- 5. LÓGICA ---
+    # --- 5. LÓGICA DE CÁLCULO E PDF ---
     def executar_calculo(e):
         try:
             val_bruto = float(ent_valor.value.replace(",", "."))
@@ -150,17 +150,23 @@ def main_flet(page: ft.Page):
     # --- 6. CARDS RESPONSIVOS ---
     painel_cards = ft.Row(
         controls=[
-            ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=9), card_pago]), padding=8)),
-            ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL DEVIDO", size=9), card_devido]), padding=8)),
+            ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=9), card_pago]), padding=6)),
+            ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL DEVIDO", size=9), card_devido]), padding=6)),
             ft.Card(
-                content=ft.Container(content=ft.Column([ft.Text("REST. SIMPLES", size=9), card_simples]), padding=8)),
-            ft.Card(content=ft.Container(content=ft.Column([ft.Text("REST. DOBRO", size=9), card_dobro]), padding=8)),
+                content=ft.Container(content=ft.Column([ft.Text("REST. SIMPLES", size=9), card_simples]), padding=6)),
+            ft.Card(content=ft.Container(content=ft.Column([ft.Text("REST. DOBRO", size=9), card_dobro]), padding=6)),
         ],
         scroll=ft.ScrollMode.AUTO
     )
 
-    # --- 7. CONTAINER PRINCIPAL ---
-    conteudo = ft.Column(
+    # --- 7. MONTAGEM ISOLADA DA TABELA COM ROLAGEM HORIZONTAL ---
+    tabela_container = ft.Row(
+        controls=[tabela],
+        scroll=ft.ScrollMode.AUTO,
+    )
+
+    # --- 8. CORPO DA INTERFACE ENCAPSULADO ---
+    conteudo_formulario = ft.Column(
         controls=[
             ft.Text("PARÂMETROS DO CONTRATO", size=16, weight=ft.FontWeight.BOLD),
             ent_valor,
@@ -180,14 +186,18 @@ def main_flet(page: ft.Page):
             painel_cards,
             ft.Divider(),
             ft.Text("MEMÓRIA DE CÁLCULO", size=15, weight=ft.FontWeight.BOLD),
-            ft.Row([tabela], scroll=ft.ScrollMode.AUTO)
+            tabela_container
         ],
         spacing=12,
-        alignment=ft.MainAxisAlignment.START,
-        horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
 
-    page.add(conteudo)
+    # Envolve em um Container centralizado na largura da janela
+    page.add(
+        ft.Container(
+            content=conteudo_formulario,
+            alignment=ft.alignment.top_left
+        )
+    )
 
 
 if __name__ == "__main__":
