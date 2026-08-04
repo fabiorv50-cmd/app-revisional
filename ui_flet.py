@@ -7,7 +7,8 @@ def main_flet(page: ft.Page):
     page.title = "Sistema Pericial Revisional"
     page.theme_mode = ft.ThemeMode.DARK
     page.scroll = ft.ScrollMode.AUTO
-    page.padding = 12
+    page.padding = 10
+    page.horizontal_alignment = ft.CrossAxisAlignment.START
 
     # Estado da aplicação
     valores_pagos_custom = {}
@@ -33,7 +34,7 @@ def main_flet(page: ft.Page):
             file_type=ft.FilePickerFileType.IMAGE
         )
 
-    # --- 2. CAMPOS DE ENTRADA ---
+    # --- 2. CAMPOS DE ENTRADA (LARGURA FIXADA PARA NÃO VAZAR A TELA) ---
     ent_valor = ft.TextField(label="Valor Financiado Bruto (R$)", value="50000", keyboard_type=ft.KeyboardType.NUMBER)
     ent_tarifas = ft.TextField(label="Tarifas/Seguros Indevidos (R$)", value="2000",
                                keyboard_type=ft.KeyboardType.NUMBER)
@@ -51,10 +52,10 @@ def main_flet(page: ft.Page):
     ent_rodape = ft.TextField(label="Rodapé do PDF", value="Advocacia Rocha | OAB 12.345")
 
     # --- 3. CARDS DE RESULTADOS ---
-    card_pago = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
-    card_devido = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
-    card_simples = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
-    card_dobro = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
+    card_pago = ft.Text("R$ 0,00", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
+    card_devido = ft.Text("R$ 0,00", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
+    card_simples = ft.Text("R$ 0,00", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
+    card_dobro = ft.Text("R$ 0,00", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
 
     # --- 4. TABELA DE MEMÓRIA DE CÁLCULO ---
     tabela = ft.DataTable(
@@ -147,7 +148,7 @@ def main_flet(page: ft.Page):
             page.snack_bar.open = True
             page.update()
 
-    # --- 6. CARDS RESPONSIVOS ---
+    # --- 6. PAINEL DE CARDS COM ROLAGEM HORIZONTAL ---
     painel_cards = ft.Row(
         controls=[
             ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=9), card_pago]), padding=6)),
@@ -159,14 +160,8 @@ def main_flet(page: ft.Page):
         scroll=ft.ScrollMode.AUTO
     )
 
-    # --- 7. TABELA COM ROLAGEM HORIZONTAL ---
-    tabela_container = ft.Row(
-        controls=[tabela],
-        scroll=ft.ScrollMode.AUTO,
-    )
-
-    # --- 8. ESTRUTURA DO FORMULÁRIO ---
-    conteudo_formulario = ft.Column(
+    # --- 7. ESTRUTURA DO LAYOUT COM ROLAGEM ISOLADA ---
+    layout_conteudo = ft.ListView(
         controls=[
             ft.Text("PARÂMETROS DO CONTRATO", size=16, weight=ft.FontWeight.BOLD),
             ent_valor,
@@ -186,17 +181,13 @@ def main_flet(page: ft.Page):
             painel_cards,
             ft.Divider(),
             ft.Text("MEMÓRIA DE CÁLCULO", size=15, weight=ft.FontWeight.BOLD),
-            tabela_container
+            ft.Row([tabela], scroll=ft.ScrollMode.AUTO)
         ],
         spacing=12,
+        expand=True
     )
 
-    page.add(
-        ft.Container(
-            content=conteudo_formulario,
-            padding=5
-        )
-    )
+    page.add(layout_conteudo)
 
 
 if __name__ == "__main__":
