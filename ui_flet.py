@@ -8,17 +8,21 @@ def main_flet(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
     page.scroll = ft.ScrollMode.AUTO
 
+    # --- CONFIGURAÇÕES DE PÁGINA PARA TELA CHEIA E CENTRALIZADA ---
+    page.padding = 15
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+
     # Estado da aplicação
     valores_pagos_custom = {}
     logo_path = {"caminho": ""}
     resumo_atual = {"dados": None}
     memoria_atual = {"dados": None}
 
-    # --- 1. CONFIGURAÇÃO DO FILEPICKER (Sem erros de sintaxe) ---
+    # --- 1. CONFIGURAÇÃO DO FILEPICKER ---
     def on_logo_selecionada(e: ft.FilePickerResultEvent):
         if e.files and len(e.files) > 0:
             logo_path["caminho"] = e.files[0].path
-            lbl_logo_status.value = f"Logo: {e.files[0].name[:12]}..."
+            lbl_logo_status.value = f"Logo selecionada: {e.files[0].name[:12]}..."
             lbl_logo_status.color = ft.Colors.GREEN_400
             page.update()
 
@@ -33,27 +37,31 @@ def main_flet(page: ft.Page):
         )
 
     # --- 2. CAMPOS DE ENTRADA (FORMULÁRIO) ---
-    ent_valor = ft.TextField(label="Valor Financiado Bruto (R$)", value="50000", keyboard_type=ft.KeyboardType.NUMBER)
+    ent_valor = ft.TextField(label="Valor Financiado Bruto (R$)", value="50000", keyboard_type=ft.KeyboardType.NUMBER,
+                             expand=True)
     ent_tarifas = ft.TextField(label="Tarifas/Seguros Indevidos (R$)", value="2000",
-                               keyboard_type=ft.KeyboardType.NUMBER)
-    ent_prazo = ft.TextField(label="Prazo (Nº Parcelas)", value="12", keyboard_type=ft.KeyboardType.NUMBER)
-    ent_taxa_banco = ft.TextField(label="Taxa do Banco (% a.m.)", value="2.5", keyboard_type=ft.KeyboardType.NUMBER)
-    ent_taxa_bacen = ft.TextField(label="Taxa BACEN Ref (% a.m.)", value="1.35", keyboard_type=ft.KeyboardType.NUMBER)
+                               keyboard_type=ft.KeyboardType.NUMBER, expand=True)
+    ent_prazo = ft.TextField(label="Prazo (Nº Parcelas)", value="12", keyboard_type=ft.KeyboardType.NUMBER, expand=True)
+    ent_taxa_banco = ft.TextField(label="Taxa do Banco (% a.m.)", value="2.5", keyboard_type=ft.KeyboardType.NUMBER,
+                                  expand=True)
+    ent_taxa_bacen = ft.TextField(label="Taxa BACEN Ref (% a.m.)", value="1.35", keyboard_type=ft.KeyboardType.NUMBER,
+                                  expand=True)
 
     opt_sistema = ft.Dropdown(
         label="Sistema de Amortização",
         value="PRICE",
-        options=[ft.dropdown.Option("PRICE"), ft.dropdown.Option("SAC")]
+        options=[ft.dropdown.Option("PRICE"), ft.dropdown.Option("SAC")],
+        expand=True
     )
 
     lbl_logo_status = ft.Text("Sem logo selecionada", size=12, color=ft.Colors.GREY_500)
-    ent_rodape = ft.TextField(label="Rodapé do PDF", value="Advocacia Rocha | OAB 12.345")
+    ent_rodape = ft.TextField(label="Rodapé do PDF", value="Advocacia Rocha | OAB 12.345", expand=True)
 
     # --- 3. CARDS DE RESULTADOS ---
-    card_pago = ft.Text("R$ 0,00", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
-    card_devido = ft.Text("R$ 0,00", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
-    card_simples = ft.Text("R$ 0,00", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
-    card_dobro = ft.Text("R$ 0,00", size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
+    card_pago = ft.Text("R$ 0,00", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
+    card_devido = ft.Text("R$ 0,00", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
+    card_simples = ft.Text("R$ 0,00", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
+    card_dobro = ft.Text("R$ 0,00", size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
 
     # --- 4. TABELA DE MEMÓRIA DE CÁLCULO ---
     tabela = ft.DataTable(
@@ -62,7 +70,7 @@ def main_flet(page: ft.Page):
             ft.DataColumn(ft.Text("Pago Real")),
             ft.DataColumn(ft.Text("Saldo Inic.")),
             ft.DataColumn(ft.Text("Juros")),
-            ft.DataColumn(ft.Text("Amortization")),
+            ft.DataColumn(ft.Text("Amortização")),
             ft.DataColumn(ft.Text("Prest. Correta")),
             ft.DataColumn(ft.Text("Saldo Final")),
             ft.DataColumn(ft.Text("Diferença")),
@@ -70,7 +78,7 @@ def main_flet(page: ft.Page):
         rows=[]
     )
 
-    # --- 5. LÓGICA DOS BOTAÕES ---
+    # --- 5. LÓGICA DOS BOTÕES ---
     def executar_calculo(e):
         try:
             val_bruto = float(ent_valor.value.replace(",", "."))
@@ -134,12 +142,11 @@ def main_flet(page: ft.Page):
                 "taxa_bacen": float(ent_taxa_bacen.value.replace(",", ".")) / 100,
                 "sistema": opt_sistema.value
             }
-            # No celular, salvamos direto na pasta temporária ou de downloads
             caminho_pdf = "/sdcard/Download/laudo_revisional.pdf"
             exportar_pdf(caminho_pdf, params, resumo_atual["dados"], memoria_atual["dados"], logo_path["caminho"],
                          ent_rodape.value)
 
-            page.snack_bar = ft.SnackBar(ft.Text(f"PDF salvo em Downloads!"))
+            page.snack_bar = ft.SnackBar(ft.Text("PDF salvo na pasta Downloads!"))
             page.snack_bar.open = True
             page.update()
         except Exception as err:
@@ -147,40 +154,46 @@ def main_flet(page: ft.Page):
             page.snack_bar.open = True
             page.update()
 
-    # --- 6. MONTAGEM DA TELA (LAYOUT RESPONSIVO) ---
+    # --- 6. MONTAGEM DO CONTAINER CENTRALIZADO ---
     painel_cards = ft.Row(
         controls=[
-            ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=10), card_pago]), padding=10)),
+            ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=9), card_pago]), padding=8)),
+            ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL DEVIDO", size=9), card_devido]), padding=8)),
             ft.Card(
-                content=ft.Container(content=ft.Column([ft.Text("TOTAL DEVIDO", size=10), card_devido]), padding=10)),
-            ft.Card(content=ft.Container(content=ft.Column([ft.Text("RESTITUIÇÃO SIMPLES", size=10), card_simples]),
-                                         padding=10)),
-            ft.Card(content=ft.Container(content=ft.Column([ft.Text("RESTITUIÇÃO DOBRO", size=10), card_dobro]),
-                                         padding=10)),
+                content=ft.Container(content=ft.Column([ft.Text("REST. SIMPLES", size=9), card_simples]), padding=8)),
+            ft.Card(content=ft.Container(content=ft.Column([ft.Text("REST. DOBRO", size=9), card_dobro]), padding=8)),
         ],
         scroll=ft.ScrollMode.AUTO
     )
 
-    page.add(
-        ft.Text("PARÂMETROS DO CONTRATO", size=18, weight=ft.FontWeight.BOLD),
-        ent_valor,
-        ent_tarifas,
-        ent_prazo,
-        ent_taxa_banco,
-        ent_taxa_bacen,
-        opt_sistema,
-        ft.ElevatedButton("📷 Selecionar Logo", on_click=selecionar_logo),
-        lbl_logo_status,
-        ent_rodape,
-        ft.ElevatedButton("CALCULAR REVISÃO", on_click=executar_calculo, bgcolor=ft.Colors.GREEN_700,
-                          color=ft.Colors.WHITE),
-        ft.ElevatedButton("EXPORTAR PDF", on_click=gerar_pdf_click, bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE),
-        ft.Divider(),
-        painel_cards,
-        ft.Divider(),
-        ft.Text("MEMÓRIA DE CÁLCULO", size=16, weight=ft.FontWeight.BOLD),
-        ft.Row([tabela], scroll=ft.ScrollMode.AUTO)
+    # Estrutura encapsulada dentro de um Container de 100% de largura
+    layout_principal = ft.Column(
+        controls=[
+            ft.Text("PARÂMETROS DO CONTRATO", size=16, weight=ft.FontWeight.BOLD),
+            ent_valor,
+            ent_tarifas,
+            ent_prazo,
+            ent_taxa_banco,
+            ent_taxa_bacen,
+            opt_sistema,
+            ft.ElevatedButton("📷 Selecionar Logo", on_click=selecionar_logo, width=400),
+            lbl_logo_status,
+            ent_rodape,
+            ft.ElevatedButton("CALCULAR REVISÃO", on_click=executar_calculo, bgcolor=ft.Colors.GREEN_700,
+                              color=ft.Colors.WHITE, height=45, width=400),
+            ft.ElevatedButton("EXPORTAR PDF", on_click=gerar_pdf_click, bgcolor=ft.Colors.BLUE_700,
+                              color=ft.Colors.WHITE, height=45, width=400),
+            ft.Divider(),
+            painel_cards,
+            ft.Divider(),
+            ft.Text("MEMÓRIA DE CÁLCULO", size=15, weight=ft.FontWeight.BOLD),
+            ft.Row([tabela], scroll=ft.ScrollMode.AUTO)
+        ],
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        spacing=10
     )
+
+    page.add(layout_principal)
 
 
 if __name__ == "__main__":
