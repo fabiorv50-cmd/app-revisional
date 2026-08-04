@@ -1,2 +1,6 @@
 [tool.flet]
-main_module = "ui_flet"
+main_module = "ui_flet.py"
+dependencies = [
+    "flet",
+    "reportlab"
+]
