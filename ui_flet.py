@@ -195,7 +195,7 @@ def main_flet(page: ft.Page):
     page.add(
         ft.Container(
             content=conteudo_formulario,
-            alignment=ft.alignment.top_left
+            alignment=ft.alignment(-1,-1)
         )
     )
 
