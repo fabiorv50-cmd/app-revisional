@@ -1,3 +1,4 @@
+import os
 import flet as ft
 from core.calculos import calcular_revisao_contrato
 from core.gerador_pdf import exportar_pdf
@@ -27,11 +28,57 @@ def main_flet(page: ft.Page):
         options=[ft.dropdown.Option("PRICE"), ft.dropdown.Option("SAC")]
     )
 
-    # Entrada textual para o caminho da logo no Android
-    ent_logo_path = ft.TextField(label="Caminho/URL da Logo (Opcional)", value="")
+    ent_logo_path = ft.TextField(label="Caminho/URL da Logo (Opcional)", value="",
+                                 hint_text="Ex: /sdcard/Download/logo.png")
     ent_rodape = ft.TextField(label="Rodapé do PDF", value="Advocacia Rocha | OAB 12.345")
 
-    # --- 2. CARDS DE RESULTADOS (GRID 2x2) ---
+    lbl_parcelas_status = ft.Text("Nenhuma parcela customizada.", size=12, color=ft.Colors.GREY_500)
+
+    # --- 2. MODAL PARA EDITAR PARCELAS PAGAS ---
+    ent_num_parcela = ft.TextField(label="Nº da Parcela", keyboard_type=ft.KeyboardType.NUMBER)
+    ent_val_parcela = ft.TextField(label="Valor Efetivamente Pago (R$)", keyboard_type=ft.KeyboardType.NUMBER)
+
+    def salvar_parcela_custom(e):
+        try:
+            num = int(ent_num_parcela.value)
+            val = float(ent_val_parcela.value.replace(",", "."))
+            valores_pagos_custom[num] = val
+            lbl_parcelas_status.value = f"{len(valores_pagos_custom)} parcela(s) customizada(s)."
+            lbl_parcelas_status.color = ft.Colors.GREEN_400
+            dialog_parcelas.open = False
+            ent_num_parcela.value = ""
+            ent_val_parcela.value = ""
+            page.snack_bar = ft.SnackBar(ft.Text(f"Parcela {num} salva com R$ {val:.2f}!"))
+            page.snack_bar.open = True
+            page.update()
+        except Exception as err:
+            page.snack_bar = ft.SnackBar(ft.Text(f"Erro ao salvar parcela: {err}"))
+            page.snack_bar.open = True
+            page.update()
+
+    def fechar_dialog(e):
+        dialog_parcelas.open = False
+        page.update()
+
+    dialog_parcelas = ft.AlertDialog(
+        title=ft.Text("Editar Parcela Paga"),
+        content=ft.Column([
+            ent_num_parcela,
+            ent_val_parcela
+        ], tight=True, spacing=10),
+        actions=[
+            ft.TextButton("Cancelar", on_click=fechar_dialog),
+            ft.ElevatedButton("Salvar", on_click=salvar_parcela_custom, bgcolor=ft.Colors.GREEN_700,
+                              color=ft.Colors.WHITE)
+        ]
+    )
+
+    def abrir_dialog_parcelas(e):
+        page.dialog = dialog_parcelas
+        dialog_parcelas.open = True
+        page.update()
+
+    # --- 3. CARDS DE RESULTADOS (GRID 2x2) ---
     card_pago = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
     card_devido = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
     card_simples = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
@@ -59,7 +106,7 @@ def main_flet(page: ft.Page):
         ]
     )
 
-    # --- 3. TABELA DE CÁLCULO ---
+    # --- 4. TABELA DE CÁLCULO ---
     tabela = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("Nº")),
@@ -74,7 +121,7 @@ def main_flet(page: ft.Page):
         rows=[]
     )
 
-    # --- 4. LÓGICA DE CÁLCULO E EXPORTAÇÃO ---
+    # --- 5. LÓGICA DE CÁLCULO E EXPORTAÇÃO PDF ---
     def executar_calculo(e):
         try:
             val_bruto = float(ent_valor.value.replace(",", "."))
@@ -138,11 +185,17 @@ def main_flet(page: ft.Page):
                 "taxa_bacen": float(ent_taxa_bacen.value.replace(",", ".")) / 100,
                 "sistema": opt_sistema.value
             }
-            caminho_pdf = "/sdcard/Download/laudo_revisional.pdf"
+
+            # Rotina de seleção de diretório no Android
+            pasta_destino = "/storage/emulated/0/Download"
+            if not os.path.exists(pasta_destino):
+                os.makedirs(pasta_destino, exist_ok=True)
+
+            caminho_pdf = os.path.join(pasta_destino, "laudo_revisional.pdf")
             exportar_pdf(caminho_pdf, params, resumo_atual["dados"], memoria_atual["dados"], ent_logo_path.value,
                          ent_rodape.value)
 
-            page.snack_bar = ft.SnackBar(ft.Text("PDF salvo na pasta Downloads!"))
+            page.snack_bar = ft.SnackBar(ft.Text(f"PDF salvo em: {caminho_pdf}"))
             page.snack_bar.open = True
             page.update()
         except Exception as err:
@@ -150,7 +203,7 @@ def main_flet(page: ft.Page):
             page.snack_bar.open = True
             page.update()
 
-    # --- 5. MONTAGEM DA INTERFACE EM LISTVIEW ---
+    # --- 6. MONTAGEM DA INTERFACE EM LISTVIEW ---
     conteudo_formulario = ft.Column(
         controls=[
             ft.Text("PARÂMETROS DO CONTRATO", size=15, weight=ft.FontWeight.BOLD),
@@ -160,6 +213,8 @@ def main_flet(page: ft.Page):
             ent_taxa_banco,
             ent_taxa_bacen,
             opt_sistema,
+            ft.OutlinedButton("📝 Editar Parcelas Pagas", on_click=abrir_dialog_parcelas),
+            lbl_parcelas_status,
             ent_logo_path,
             ent_rodape,
             ft.ElevatedButton("CALCULAR REVISÃO", on_click=executar_calculo, bgcolor=ft.Colors.GREEN_700,
