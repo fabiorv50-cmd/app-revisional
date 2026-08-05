@@ -6,8 +6,7 @@ from core.gerador_pdf import exportar_pdf
 def main_flet(page: ft.Page):
     page.title = "Sistema Pericial Revisional"
     page.theme_mode = ft.ThemeMode.DARK
-    page.padding = 10
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.padding = 12
 
     # Estado da aplicação
     valores_pagos_custom = {}
@@ -15,31 +14,38 @@ def main_flet(page: ft.Page):
     resumo_atual = {"dados": None}
     memoria_atual = {"dados": None}
 
-    # --- 1. FILEPICKER SEGURANÇA MOBILE ---
-    def on_logo_selecionada(e: ft.FilePickerResultEvent):
-        if e.files and len(e.files) > 0:
-            logo_path["caminho"] = e.files[0].path
-            lbl_logo_status.value = f"Logo: {e.files[0].name[:12]}..."
-            lbl_logo_status.color = ft.Colors.GREEN_400
-            page.update()
+    # --- 1. SELEÇÃO DE LOGO (COMPATÍVEL) ---
+    lbl_logo_status = ft.Text("Sem logo personalizada", size=12, color=ft.Colors.GREY_500)
 
-    file_picker_logo = ft.FilePicker()
-    file_picker_logo.on_result = on_logo_selecionada
-
-    # Tenta adicionar no overlay com captura de exceção
+    # Criação condicional do FilePicker sem lançar exceções na interface
     try:
+        def on_logo_selecionada(e: ft.FilePickerResultEvent):
+            if e.files and len(e.files) > 0:
+                logo_path["caminho"] = e.files[0].path
+                lbl_logo_status.value = f"Logo: {e.files[0].name[:12]}..."
+                lbl_logo_status.color = ft.Colors.GREEN_400
+                page.update()
+
+        file_picker_logo = ft.FilePicker()
+        file_picker_logo.on_result = on_logo_selecionada
         page.overlay.append(file_picker_logo)
+        file_picker_disponivel = True
     except Exception:
-        pass
+        file_picker_disponivel = False
 
     def selecionar_logo(e):
-        try:
-            file_picker_logo.pick_files(
-                allow_multiple=False,
-                file_type=ft.FilePickerFileType.IMAGE
-            )
-        except Exception as err:
-            page.snack_bar = ft.SnackBar(ft.Text("Seleção de imagem indisponível nesta versão mobile."))
+        if file_picker_disponivel:
+            try:
+                file_picker_logo.pick_files(
+                    allow_multiple=False,
+                    file_type=ft.FilePickerFileType.IMAGE
+                )
+            except Exception:
+                page.snack_bar = ft.SnackBar(ft.Text("Seleção de arquivos não suportada neste dispositivo."))
+                page.snack_bar.open = True
+                page.update()
+        else:
+            page.snack_bar = ft.SnackBar(ft.Text("Recurso de busca de arquivos desativado na versão móvel."))
             page.snack_bar.open = True
             page.update()
 
@@ -57,16 +63,37 @@ def main_flet(page: ft.Page):
         options=[ft.dropdown.Option("PRICE"), ft.dropdown.Option("SAC")]
     )
 
-    lbl_logo_status = ft.Text("Sem logo selecionada", size=12, color=ft.Colors.GREY_500)
     ent_rodape = ft.TextField(label="Rodapé do PDF", value="Advocacia Rocha | OAB 12.345")
 
-    # --- 3. CARDS DE RESULTADOS ---
+    # --- 3. CARDS DE RESULTADOS (GRID 2x2) ---
     card_pago = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
     card_devido = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
     card_simples = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
     card_dobro = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
 
-    # --- 4. TABELA DE MEMÓRIA DE CÁLCULO ---
+    painel_cards = ft.Column(
+        controls=[
+            ft.Row(
+                [
+                    ft.Card(
+                        content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=8), card_pago]), padding=6),
+                        expand=True),
+                    ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL DEVIDO", size=8), card_devido]),
+                                                 padding=6), expand=True),
+                ]
+            ),
+            ft.Row(
+                [
+                    ft.Card(content=ft.Container(content=ft.Column([ft.Text("REST. SIMPLES", size=8), card_simples]),
+                                                 padding=6), expand=True),
+                    ft.Card(content=ft.Container(content=ft.Column([ft.Text("REST. DOBRO", size=8), card_dobro]),
+                                                 padding=6), expand=True),
+                ]
+            )
+        ]
+    )
+
+    # --- 4. TABELA DE CÁLCULO ---
     tabela = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("Nº")),
@@ -125,7 +152,7 @@ def main_flet(page: ft.Page):
             page.update()
 
         except Exception as err:
-            page.snack_bar = ft.SnackBar(ft.Text(f"Erro: {str(err)}"))
+            page.snack_bar = ft.SnackBar(ft.Text(f"Erro no cálculo: {str(err)}"))
             page.snack_bar.open = True
             page.update()
 
@@ -157,39 +184,8 @@ def main_flet(page: ft.Page):
             page.snack_bar.open = True
             page.update()
 
-    # --- 6. PAINEL DE CARDS (GRID 2x2 PARA DENSIDADE MOBILE) ---
-    painel_cards = ft.Column(
-        controls=[
-            ft.Row(
-                [
-                    ft.Card(
-                        content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=8), card_pago]), padding=6),
-                        expand=True),
-                    ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL DEVIDO", size=8), card_devido]),
-                                                 padding=6), expand=True),
-                ]
-            ),
-            ft.Row(
-                [
-                    ft.Card(content=ft.Container(content=ft.Column([ft.Text("REST. SIMPLES", size=8), card_simples]),
-                                                 padding=6), expand=True),
-                    ft.Card(content=ft.Container(content=ft.Column([ft.Text("REST. DOBRO", size=8), card_dobro]),
-                                                 padding=6), expand=True),
-                ]
-            )
-        ]
-    )
-
-    # --- 7. TABELA ISOLADA PARA EVITAR LARGURA INFINITA ---
-    tabela_container = ft.Column(
-        controls=[
-            ft.Row([tabela], scroll=ft.ScrollMode.ALWAYS)
-        ],
-        scroll=None
-    )
-
-    # --- 8. ESTRUTURA PRINCIPAL ENCAPSULADA ---
-    form_layout = ft.Column(
+    # --- 6. CONTAINER PRINCIPAL EM LISTVIEW COM SCROLL ISOLADO ---
+    conteudo_formulario = ft.Column(
         controls=[
             ft.Text("PARÂMETROS DO CONTRATO", size=15, weight=ft.FontWeight.BOLD),
             ent_valor,
@@ -209,16 +205,15 @@ def main_flet(page: ft.Page):
             painel_cards,
             ft.Divider(),
             ft.Text("MEMÓRIA DE CÁLCULO", size=14, weight=ft.FontWeight.BOLD),
-            tabela_container
+            ft.Row([tabela], scroll=ft.ScrollMode.ALWAYS)
         ],
         spacing=10,
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
 
-    # Adiciona a ListView cobrindo a tela inteira sem overflow lateral
     page.add(
         ft.ListView(
-            controls=[form_layout],
+            controls=[conteudo_formulario],
             expand=True,
             spacing=10
         )
