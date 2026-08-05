@@ -10,46 +10,10 @@ def main_flet(page: ft.Page):
 
     # Estado da aplicação
     valores_pagos_custom = {}
-    logo_path = {"caminho": ""}
     resumo_atual = {"dados": None}
     memoria_atual = {"dados": None}
 
-    # --- 1. SELEÇÃO DE LOGO (COMPATÍVEL) ---
-    lbl_logo_status = ft.Text("Sem logo personalizada", size=12, color=ft.Colors.GREY_500)
-
-    # Criação condicional do FilePicker sem lançar exceções na interface
-    try:
-        def on_logo_selecionada(e: ft.FilePickerResultEvent):
-            if e.files and len(e.files) > 0:
-                logo_path["caminho"] = e.files[0].path
-                lbl_logo_status.value = f"Logo: {e.files[0].name[:12]}..."
-                lbl_logo_status.color = ft.Colors.GREEN_400
-                page.update()
-
-        file_picker_logo = ft.FilePicker()
-        file_picker_logo.on_result = on_logo_selecionada
-        page.overlay.append(file_picker_logo)
-        file_picker_disponivel = True
-    except Exception:
-        file_picker_disponivel = False
-
-    def selecionar_logo(e):
-        if file_picker_disponivel:
-            try:
-                file_picker_logo.pick_files(
-                    allow_multiple=False,
-                    file_type=ft.FilePickerFileType.IMAGE
-                )
-            except Exception:
-                page.snack_bar = ft.SnackBar(ft.Text("Seleção de arquivos não suportada neste dispositivo."))
-                page.snack_bar.open = True
-                page.update()
-        else:
-            page.snack_bar = ft.SnackBar(ft.Text("Recurso de busca de arquivos desativado na versão móvel."))
-            page.snack_bar.open = True
-            page.update()
-
-    # --- 2. CAMPOS DE ENTRADA ---
+    # --- 1. CAMPOS DE ENTRADA ---
     ent_valor = ft.TextField(label="Valor Financiado Bruto (R$)", value="50000", keyboard_type=ft.KeyboardType.NUMBER)
     ent_tarifas = ft.TextField(label="Tarifas/Seguros Indevidos (R$)", value="2000",
                                keyboard_type=ft.KeyboardType.NUMBER)
@@ -63,9 +27,11 @@ def main_flet(page: ft.Page):
         options=[ft.dropdown.Option("PRICE"), ft.dropdown.Option("SAC")]
     )
 
+    # Entrada textual para o caminho da logo no Android
+    ent_logo_path = ft.TextField(label="Caminho/URL da Logo (Opcional)", value="")
     ent_rodape = ft.TextField(label="Rodapé do PDF", value="Advocacia Rocha | OAB 12.345")
 
-    # --- 3. CARDS DE RESULTADOS (GRID 2x2) ---
+    # --- 2. CARDS DE RESULTADOS (GRID 2x2) ---
     card_pago = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
     card_devido = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
     card_simples = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
@@ -93,7 +59,7 @@ def main_flet(page: ft.Page):
         ]
     )
 
-    # --- 4. TABELA DE CÁLCULO ---
+    # --- 3. TABELA DE CÁLCULO ---
     tabela = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("Nº")),
@@ -108,7 +74,7 @@ def main_flet(page: ft.Page):
         rows=[]
     )
 
-    # --- 5. LÓGICA DE CÁLCULO E PDF ---
+    # --- 4. LÓGICA DE CÁLCULO E EXPORTAÇÃO ---
     def executar_calculo(e):
         try:
             val_bruto = float(ent_valor.value.replace(",", "."))
@@ -147,7 +113,7 @@ def main_flet(page: ft.Page):
             card_simples.value = f"R$ {resumo['tot_dif']:,.2f}"
             card_dobro.value = f"R$ {resumo['tot_dobro']:,.2f}"
 
-            page.snack_bar = ft.SnackBar(ft.Text("Cálculo realizado!"))
+            page.snack_bar = ft.SnackBar(ft.Text("Cálculo realizado com sucesso!"))
             page.snack_bar.open = True
             page.update()
 
@@ -158,7 +124,7 @@ def main_flet(page: ft.Page):
 
     def gerar_pdf_click(e):
         if not resumo_atual["dados"]:
-            page.snack_bar = ft.SnackBar(ft.Text("Calcule antes de exportar!"))
+            page.snack_bar = ft.SnackBar(ft.Text("Execute o cálculo antes de exportar!"))
             page.snack_bar.open = True
             page.update()
             return
@@ -173,7 +139,7 @@ def main_flet(page: ft.Page):
                 "sistema": opt_sistema.value
             }
             caminho_pdf = "/sdcard/Download/laudo_revisional.pdf"
-            exportar_pdf(caminho_pdf, params, resumo_atual["dados"], memoria_atual["dados"], logo_path["caminho"],
+            exportar_pdf(caminho_pdf, params, resumo_atual["dados"], memoria_atual["dados"], ent_logo_path.value,
                          ent_rodape.value)
 
             page.snack_bar = ft.SnackBar(ft.Text("PDF salvo na pasta Downloads!"))
@@ -184,7 +150,7 @@ def main_flet(page: ft.Page):
             page.snack_bar.open = True
             page.update()
 
-    # --- 6. CONTAINER PRINCIPAL EM LISTVIEW COM SCROLL ISOLADO ---
+    # --- 5. MONTAGEM DA INTERFACE EM LISTVIEW ---
     conteudo_formulario = ft.Column(
         controls=[
             ft.Text("PARÂMETROS DO CONTRATO", size=15, weight=ft.FontWeight.BOLD),
@@ -194,8 +160,7 @@ def main_flet(page: ft.Page):
             ent_taxa_banco,
             ent_taxa_bacen,
             opt_sistema,
-            ft.ElevatedButton("📷 Selecionar Logo", on_click=selecionar_logo),
-            lbl_logo_status,
+            ent_logo_path,
             ent_rodape,
             ft.ElevatedButton("CALCULAR REVISÃO", on_click=executar_calculo, bgcolor=ft.Colors.GREEN_700,
                               color=ft.Colors.WHITE, height=45),
