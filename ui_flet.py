@@ -185,7 +185,7 @@ def main_flet(page: ft.Page):
         controls=[
             ft.Row([tabela], scroll=ft.ScrollMode.ALWAYS)
         ],
-        scroll=ft.ScrollMode.NONE
+        scroll=None
     )
 
     # --- 8. ESTRUTURA PRINCIPAL ENCAPSULADA ---
