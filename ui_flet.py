@@ -1,4 +1,5 @@
 import os
+import tempfile
 import flet as ft
 from core.calculos import calcular_revisao_contrato
 from core.gerador_pdf import exportar_pdf
@@ -9,7 +10,7 @@ def main_flet(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
     page.padding = 12
 
-    # Estado da aplicação
+    # Estado global da aplicação
     valores_pagos_custom = {}
     resumo_atual = {"dados": None}
     memoria_atual = {"dados": None}
@@ -28,33 +29,51 @@ def main_flet(page: ft.Page):
         options=[ft.dropdown.Option("PRICE"), ft.dropdown.Option("SAC")]
     )
 
-    ent_logo_path = ft.TextField(label="Caminho/URL da Logo (Opcional)", value="",
-                                 hint_text="Ex: /sdcard/Download/logo.png")
+    ent_logo_path = ft.TextField(label="Caminho/URL da Logo (Opcional)", value="")
     ent_rodape = ft.TextField(label="Rodapé do PDF", value="Advocacia Rocha | OAB 12.345")
 
     lbl_parcelas_status = ft.Text("Nenhuma parcela customizada.", size=12, color=ft.Colors.GREY_500)
 
-    # --- 2. MODAL PARA EDITAR PARCELAS PAGAS ---
-    ent_num_parcela = ft.TextField(label="Nº da Parcela", keyboard_type=ft.KeyboardType.NUMBER)
+    # --- 2. MODAL E LÓGICA DE EDIÇÃO DE PARCELAS ---
+    ent_num_parcela = ft.TextField(label="Nº da Parcela (ex: 1)", keyboard_type=ft.KeyboardType.NUMBER)
     ent_val_parcela = ft.TextField(label="Valor Efetivamente Pago (R$)", keyboard_type=ft.KeyboardType.NUMBER)
+
+    def atualizar_status_parcelas():
+        if valores_pagos_custom:
+            itens = [f"P{k}: R$ {v:.2f}" for k, v in sorted(valores_pagos_custom.items())]
+            lbl_parcelas_status.value = "Alteradas: " + ", ".join(itens)
+            lbl_parcelas_status.color = ft.Colors.GREEN_400
+        else:
+            lbl_parcelas_status.value = "Nenhuma parcela customizada."
+            lbl_parcelas_status.color = ft.Colors.GREY_500
 
     def salvar_parcela_custom(e):
         try:
+            if not ent_num_parcela.value or not ent_val_parcela.value:
+                return
             num = int(ent_num_parcela.value)
             val = float(ent_val_parcela.value.replace(",", "."))
             valores_pagos_custom[num] = val
-            lbl_parcelas_status.value = f"{len(valores_pagos_custom)} parcela(s) customizada(s)."
-            lbl_parcelas_status.color = ft.Colors.GREEN_400
-            dialog_parcelas.open = False
+            atualizar_status_parcelas()
+
             ent_num_parcela.value = ""
             ent_val_parcela.value = ""
-            page.snack_bar = ft.SnackBar(ft.Text(f"Parcela {num} salva com R$ {val:.2f}!"))
-            page.snack_bar.open = True
+            dialog_parcelas.open = False
+
+            # Recalcula automaticamente se já houver cálculo na tela
+            executar_calculo(None)
             page.update()
         except Exception as err:
             page.snack_bar = ft.SnackBar(ft.Text(f"Erro ao salvar parcela: {err}"))
             page.snack_bar.open = True
             page.update()
+
+    def limpar_parcelas_custom(e):
+        valores_pagos_custom.clear()
+        atualizar_status_parcelas()
+        dialog_parcelas.open = False
+        executar_calculo(None)
+        page.update()
 
     def fechar_dialog(e):
         dialog_parcelas.open = False
@@ -67,6 +86,7 @@ def main_flet(page: ft.Page):
             ent_val_parcela
         ], tight=True, spacing=10),
         actions=[
+            ft.TextButton("Limpar Todas", on_click=limpar_parcelas_custom),
             ft.TextButton("Cancelar", on_click=fechar_dialog),
             ft.ElevatedButton("Salvar", on_click=salvar_parcela_custom, bgcolor=ft.Colors.GREEN_700,
                               color=ft.Colors.WHITE)
@@ -78,7 +98,7 @@ def main_flet(page: ft.Page):
         dialog_parcelas.open = True
         page.update()
 
-    # --- 3. CARDS DE RESULTADOS (GRID 2x2) ---
+    # --- 3. CARDS DE RESULTADOS ---
     card_pago = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
     card_devido = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
     card_simples = ft.Text("R$ 0,00", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
@@ -106,7 +126,7 @@ def main_flet(page: ft.Page):
         ]
     )
 
-    # --- 4. TABELA DE CÁLCULO ---
+    # --- 4. TABELA DE MEMÓRIA DE CÁLCULO ---
     tabela = ft.DataTable(
         columns=[
             ft.DataColumn(ft.Text("Nº")),
@@ -121,7 +141,7 @@ def main_flet(page: ft.Page):
         rows=[]
     )
 
-    # --- 5. LÓGICA DE CÁLCULO E EXPORTAÇÃO PDF ---
+    # --- 5. LÓGICA DE CÁLCULO E GERAÇÃO DE PDF MULTI-PASTA ---
     def executar_calculo(e):
         try:
             val_bruto = float(ent_valor.value.replace(",", "."))
@@ -160,8 +180,9 @@ def main_flet(page: ft.Page):
             card_simples.value = f"R$ {resumo['tot_dif']:,.2f}"
             card_dobro.value = f"R$ {resumo['tot_dobro']:,.2f}"
 
-            page.snack_bar = ft.SnackBar(ft.Text("Cálculo realizado com sucesso!"))
-            page.snack_bar.open = True
+            if e is not None:
+                page.snack_bar = ft.SnackBar(ft.Text("Cálculo realizado com sucesso!"))
+                page.snack_bar.open = True
             page.update()
 
         except Exception as err:
@@ -176,34 +197,47 @@ def main_flet(page: ft.Page):
             page.update()
             return
 
-        try:
-            params = {
-                "val_bruto": float(ent_valor.value.replace(",", ".")),
-                "tarifas": float(ent_tarifas.value.replace(",", ".")),
-                "prazo": int(ent_prazo.value),
-                "taxa_banco": float(ent_taxa_banco.value.replace(",", ".")) / 100,
-                "taxa_bacen": float(ent_taxa_bacen.value.replace(",", ".")) / 100,
-                "sistema": opt_sistema.value
-            }
+        params = {
+            "val_bruto": float(ent_valor.value.replace(",", ".")),
+            "tarifas": float(ent_tarifas.value.replace(",", ".")),
+            "prazo": int(ent_prazo.value),
+            "taxa_banco": float(ent_taxa_banco.value.replace(",", ".")) / 100,
+            "taxa_bacen": float(ent_taxa_bacen.value.replace(",", ".")) / 100,
+            "sistema": opt_sistema.value
+        }
 
-            # Rotina de seleção de diretório no Android
-            pasta_destino = "/storage/emulated/0/Download"
-            if not os.path.exists(pasta_destino):
-                os.makedirs(pasta_destino, exist_ok=True)
+        # Tentativas de caminhos para salvar o PDF no Android
+        caminhos_tentativa = [
+            "/storage/emulated/0/Download/laudo_revisional.pdf",
+            "/sdcard/Download/laudo_revisional.pdf",
+            os.path.join(tempfile.gettempdir(), "laudo_revisional.pdf")
+        ]
 
-            caminho_pdf = os.path.join(pasta_destino, "laudo_revisional.pdf")
-            exportar_pdf(caminho_pdf, params, resumo_atual["dados"], memoria_atual["dados"], ent_logo_path.value,
-                         ent_rodape.value)
+        pdf_salvo = False
+        caminho_final = ""
 
-            page.snack_bar = ft.SnackBar(ft.Text(f"PDF salvo em: {caminho_pdf}"))
-            page.snack_bar.open = True
-            page.update()
-        except Exception as err:
-            page.snack_bar = ft.SnackBar(ft.Text(f"Erro ao gerar PDF: {str(err)}"))
-            page.snack_bar.open = True
-            page.update()
+        for caminho in caminhos_tentativa:
+            try:
+                pasta = os.path.dirname(caminho)
+                if not os.path.exists(pasta):
+                    os.makedirs(pasta, exist_ok=True)
+                exportar_pdf(caminho, params, resumo_atual["dados"], memoria_atual["dados"], ent_logo_path.value,
+                             ent_rodape.value)
+                pdf_salvo = True
+                caminho_final = caminho
+                break
+            except Exception:
+                continue
 
-    # --- 6. MONTAGEM DA INTERFACE EM LISTVIEW ---
+        if pdf_salvo:
+            page.snack_bar = ft.SnackBar(ft.Text(f"PDF gerado com sucesso em: {caminho_final}"), duration=4000)
+        else:
+            page.snack_bar = ft.SnackBar(ft.Text("Erro: Sem permissão para gravar PDF nas pastas do dispositivo."))
+
+        page.snack_bar.open = True
+        page.update()
+
+    # --- 6. MONTAGEM DO LAYOUT ---
     conteudo_formulario = ft.Column(
         controls=[
             ft.Text("PARÂMETROS DO CONTRATO", size=15, weight=ft.FontWeight.BOLD),
