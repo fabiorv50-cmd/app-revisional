@@ -21,8 +21,12 @@ def main_flet(page: ft.Page):
             lbl_logo_status.value = f"Logo: {e.files[0].name[:12]}..."
             lbl_logo_status.color = ft.Colors.GREEN_400
             page.update()
-
-    file_picker_logo = ft.FilePicker(on_result=on_logo_selecionada)
+    # 1.Instancia vazio
+    file_picker_logo = ft.FilePicker()
+    # 2. Atribui a função
+    file_picker_logo.on_result = on_logo_selecionada
+    # 3. Adiciona ao overlay (necessario para registrar o serviço de arquivos)
+    page.overlay.append(file_picker_logo)
 
     # NÃO adicione o file_picker_logo no page.overlay ou page.add!
 
