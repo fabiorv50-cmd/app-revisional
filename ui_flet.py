@@ -213,7 +213,7 @@ def main_flet(page: ft.Page):
     page.add(
         ft.Container(
             content=form_layout,
-            alignment=ft.alignment.top_center
+            alignment=ft.Alignment(0,-1)
         )
     )
 
