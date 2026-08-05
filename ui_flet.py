@@ -6,11 +6,7 @@ from core.gerador_pdf import exportar_pdf
 def main_flet(page: ft.Page):
     page.title = "Sistema Pericial Revisional"
     page.theme_mode = ft.ThemeMode.DARK
-
-    # Trava alinhamentos e paddings na raiz
     page.padding = 10
-    page.spacing = 10
-    page.scroll = ft.ScrollMode.AUTO
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
     # Estado da aplicação
@@ -19,7 +15,7 @@ def main_flet(page: ft.Page):
     resumo_atual = {"dados": None}
     memoria_atual = {"dados": None}
 
-    # --- 1. FILEPICKER ---
+    # --- 1. FILEPICKER SEGURANÇA MOBILE ---
     def on_logo_selecionada(e: ft.FilePickerResultEvent):
         if e.files and len(e.files) > 0:
             logo_path["caminho"] = e.files[0].path
@@ -29,15 +25,25 @@ def main_flet(page: ft.Page):
 
     file_picker_logo = ft.FilePicker()
     file_picker_logo.on_result = on_logo_selecionada
-    page.overlay.append(file_picker_logo)
+
+    # Tenta adicionar no overlay com captura de exceção
+    try:
+        page.overlay.append(file_picker_logo)
+    except Exception:
+        pass
 
     def selecionar_logo(e):
-        file_picker_logo.pick_files(
-            allow_multiple=False,
-            file_type=ft.FilePickerFileType.IMAGE
-        )
+        try:
+            file_picker_logo.pick_files(
+                allow_multiple=False,
+                file_type=ft.FilePickerFileType.IMAGE
+            )
+        except Exception as err:
+            page.snack_bar = ft.SnackBar(ft.Text("Seleção de imagem indisponível nesta versão mobile."))
+            page.snack_bar.open = True
+            page.update()
 
-    # --- 2. CAMPOS DE ENTRADA COM LARGURA DEFINIDA ---
+    # --- 2. CAMPOS DE ENTRADA ---
     ent_valor = ft.TextField(label="Valor Financiado Bruto (R$)", value="50000", keyboard_type=ft.KeyboardType.NUMBER)
     ent_tarifas = ft.TextField(label="Tarifas/Seguros Indevidos (R$)", value="2000",
                                keyboard_type=ft.KeyboardType.NUMBER)
@@ -151,38 +157,38 @@ def main_flet(page: ft.Page):
             page.snack_bar.open = True
             page.update()
 
-    # --- 6. CARDS DISPOSTOS EM GRID TIPO (2x2) PARA NÃO ESTOURAR A LARGURA ---
+    # --- 6. PAINEL DE CARDS (GRID 2x2 PARA DENSIDADE MOBILE) ---
     painel_cards = ft.Column(
         controls=[
             ft.Row(
                 [
                     ft.Card(
-                        content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=8), card_pago]), padding=8),
+                        content=ft.Container(content=ft.Column([ft.Text("TOTAL PAGO", size=8), card_pago]), padding=6),
                         expand=True),
                     ft.Card(content=ft.Container(content=ft.Column([ft.Text("TOTAL DEVIDO", size=8), card_devido]),
-                                                 padding=8), expand=True),
+                                                 padding=6), expand=True),
                 ]
             ),
             ft.Row(
                 [
                     ft.Card(content=ft.Container(content=ft.Column([ft.Text("REST. SIMPLES", size=8), card_simples]),
-                                                 padding=8), expand=True),
+                                                 padding=6), expand=True),
                     ft.Card(content=ft.Container(content=ft.Column([ft.Text("REST. DOBRO", size=8), card_dobro]),
-                                                 padding=8), expand=True),
+                                                 padding=6), expand=True),
                 ]
             )
         ]
     )
 
-    # --- 7. TABELA COM ISOLAMENTO RIGIDO DE LARGURA NA ROLAGEM ---
-    tabela_container = ft.ListView(
+    # --- 7. TABELA ISOLADA PARA EVITAR LARGURA INFINITA ---
+    tabela_container = ft.Column(
         controls=[
             ft.Row([tabela], scroll=ft.ScrollMode.ALWAYS)
         ],
-        height=300
+        scroll=ft.ScrollMode.NONE
     )
 
-    # --- 8. MONTAGEM DA INTERFACE EM FORMULÁRIO RÍGIDO ---
+    # --- 8. ESTRUTURA PRINCIPAL ENCAPSULADA ---
     form_layout = ft.Column(
         controls=[
             ft.Text("PARÂMETROS DO CONTRATO", size=15, weight=ft.FontWeight.BOLD),
@@ -209,11 +215,12 @@ def main_flet(page: ft.Page):
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
 
-    # Adiciona envolto em um Container que impede expansão lateral
+    # Adiciona a ListView cobrindo a tela inteira sem overflow lateral
     page.add(
-        ft.Container(
-            content=form_layout,
-            alignment=ft.Alignment(0,-1)
+        ft.ListView(
+            controls=[form_layout],
+            expand=True,
+            spacing=10
         )
     )
 
