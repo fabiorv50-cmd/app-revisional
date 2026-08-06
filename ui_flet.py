@@ -84,6 +84,7 @@ def main_flet(page: ft.Page):
     lista_memoria = ft.Column(spacing=5)
 
     # --- 5. LÓGICA DO BOTÃO CALCULAR ---
+    # --- LÓGICA DO BOTÃO CALCULAR CORRIGIDA ---
     def executar_calculo(e):
         try:
             val_bruto = float(ent_valor.value.replace(",", "."))
@@ -105,7 +106,7 @@ def main_flet(page: ft.Page):
             card_simples.value = f"R$ {resumo['tot_dif']:,.2f}"
             card_dobro.value = f"R$ {resumo['tot_dobro']:,.2f}"
 
-            # Preenche a lista com as parcelas calculadas
+            # Montagem segura da lista de parcelas sem atributos de tema inexistentes
             lista_memoria.controls.clear()
             for row in memoria:
                 lista_memoria.controls.append(
@@ -124,12 +125,12 @@ def main_flet(page: ft.Page):
                             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                         ),
                         padding=8,
-                        bgcolor=ft.Colors.SURFACE_VARIANT,
+                        bgcolor=ft.Colors.GREY_900,  # Cor estática universal
                         border_radius=5
                     )
                 )
 
-            snack = ft.SnackBar(ft.Text("Cálculo realizado com sucesso!"))
+            snack = ft.SnackBar(ft.Text("Cálculo e parcelas gerados com sucesso!"))
             page.overlay.append(snack)
             snack.open = True
             page.update()
@@ -138,11 +139,6 @@ def main_flet(page: ft.Page):
             page.overlay.append(snack)
             snack.open = True
             page.update()
-
-    # --- 6. LÓGICA DO BOTÃO GERAR PDF ---
-    def gerar_pdf_click(e):
-        if not resumo_atual["dados"]:
-            snack = ft.SnackBar(ft.Text("Atenção: Faça o cálculo antes de exportar!"))
             page.overlay.append(snack)
             snack.open = True
             page.update()
