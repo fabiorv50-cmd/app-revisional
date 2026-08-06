@@ -32,10 +32,15 @@ def main_flet(page: ft.Page):
     ent_rodape = ft.TextField(label="Rodapé do PDF", value="Advocacia Rocha | OAB 12.345")
     lbl_parcelas_status = ft.Text("Nenhuma parcela customizada.", size=12, color=ft.Colors.GREY_500)
 
-    # --- 2. MODAL DE EDIÇÃO DE PARCELAS PAGAS ---
-    ent_num_parcela = ft.TextField(label="Nº da Parcela", keyboard_type=ft.KeyboardType.NUMBER)
-    ent_val_parcela = ft.TextField(label="Valor Pago (R$)", keyboard_type=ft.KeyboardType.NUMBER)
+    # --- 2. CARDS DE RESULTADOS ---
+    card_pago = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
+    card_devido = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
+    card_simples = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
+    card_dobro = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
 
+    lista_memoria = ft.Column(spacing=5)
+
+    # --- 3. FUNÇÕES DE CALLBACK (DECLARADAS ANTES DOS BOTÕES) ---
     def fechar_dialog(e):
         dialog_parcelas.open = False
         page.update()
@@ -51,14 +56,15 @@ def main_flet(page: ft.Page):
                 dialog_parcelas.open = False
                 ent_num_parcela.value = ""
                 ent_val_parcela.value = ""
-
-                # Executa o cálculo para atualizar as parcelas na tela
                 executar_calculo(None)
             except Exception as err:
                 snack = ft.SnackBar(ft.Text(f"Erro ao salvar: {err}"))
                 page.overlay.append(snack)
                 snack.open = True
                 page.update()
+
+    ent_num_parcela = ft.TextField(label="Nº da Parcela", keyboard_type=ft.KeyboardType.NUMBER)
+    ent_val_parcela = ft.TextField(label="Valor Pago (R$)", keyboard_type=ft.KeyboardType.NUMBER)
 
     dialog_parcelas = ft.AlertDialog(
         title=ft.Text("Editar Parcela Paga"),
@@ -74,17 +80,6 @@ def main_flet(page: ft.Page):
         dialog_parcelas.open = True
         page.update()
 
-    # --- 3. CARDS DE RESULTADOS ---
-    card_pago = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.RED_400)
-    card_devido = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
-    card_simples = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_400)
-    card_dobro = ft.Text("R$ 0,00", size=13, weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_400)
-
-    # --- 4. CONTAINER DA MEMÓRIA DE CÁLCULO ---
-    lista_memoria = ft.Column(spacing=5)
-
-    # --- 5. LÓGICA DO BOTÃO CALCULAR ---
-    # --- LÓGICA DO BOTÃO CALCULAR CORRIGIDA ---
     def executar_calculo(e):
         try:
             val_bruto = float(ent_valor.value.replace(",", "."))
@@ -106,7 +101,6 @@ def main_flet(page: ft.Page):
             card_simples.value = f"R$ {resumo['tot_dif']:,.2f}"
             card_dobro.value = f"R$ {resumo['tot_dobro']:,.2f}"
 
-            # Montagem segura da lista de parcelas sem atributos de tema inexistentes
             lista_memoria.controls.clear()
             for row in memoria:
                 lista_memoria.controls.append(
@@ -125,20 +119,25 @@ def main_flet(page: ft.Page):
                             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                         ),
                         padding=8,
-                        bgcolor=ft.Colors.GREY_900,  # Cor estática universal
+                        bgcolor=ft.Colors.GREY_900,
                         border_radius=5
                     )
                 )
 
-            snack = ft.SnackBar(ft.Text("Cálculo e parcelas gerados com sucesso!"))
-            page.overlay.append(snack)
-            snack.open = True
+            if e is not None:
+                snack = ft.SnackBar(ft.Text("Cálculo realizado com sucesso!"))
+                page.overlay.append(snack)
+                snack.open = True
             page.update()
         except Exception as err:
             snack = ft.SnackBar(ft.Text(f"Erro no cálculo: {err}"))
             page.overlay.append(snack)
             snack.open = True
             page.update()
+
+    def gerar_pdf_click(e):
+        if not resumo_atual["dados"]:
+            snack = ft.SnackBar(ft.Text("Atenção: Faça o cálculo antes de exportar!"))
             page.overlay.append(snack)
             snack.open = True
             page.update()
@@ -154,7 +153,6 @@ def main_flet(page: ft.Page):
                 "sistema": opt_sistema.value
             }
 
-            # Define o caminho direto na pasta Downloads visível no Android
             pasta_download = "/storage/emulated/0/Download"
             if not os.path.exists(pasta_download):
                 os.makedirs(pasta_download, exist_ok=True)
@@ -163,7 +161,7 @@ def main_flet(page: ft.Page):
             exportar_pdf(caminho_pdf, params, resumo_atual["dados"], memoria_atual["dados"], ent_logo_path.value,
                          ent_rodape.value)
 
-            snack = ft.SnackBar(ft.Text(f"PDF salvo na pasta Downloads:\nlaudo_revisional.pdf"), duration=5000)
+            snack = ft.SnackBar(ft.Text("PDF salvo na pasta Downloads:\nlaudo_revisional.pdf"), duration=5000)
             page.overlay.append(snack)
             snack.open = True
             page.update()
@@ -173,7 +171,7 @@ def main_flet(page: ft.Page):
             snack.open = True
             page.update()
 
-    # --- 7. MONTAGEM DA INTERFACE ---
+    # --- 4. CONTROLES E MONTAGEM DA INTERFACE ---
     btn_calcular = ft.ElevatedButton("CALCULAR REVISÃO", on_click=executar_calculo, bgcolor=ft.Colors.GREEN_700,
                                      color=ft.Colors.WHITE, height=45)
     btn_pdf = ft.ElevatedButton("EXPORTAR PDF", on_click=gerar_pdf_click, bgcolor=ft.Colors.BLUE_700,
